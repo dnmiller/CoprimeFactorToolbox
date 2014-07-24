@@ -21,8 +21,7 @@ function [N, M] = cnlcf(A, B, C, D)
 % case.
 %
 % Source: Zhou, et. al, Robust and Optimal Control, 1995.
-    ny = size(D, 1);
-    nu = size(D, 2);
+    [ny, nu] = size(D);
     
     R = eye(nu) + D' * D;
     S = eye(ny) + D * D';
