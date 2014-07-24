@@ -28,7 +28,7 @@ function [N, M] = cnlcf(A, B, C, D)
     V = A - B * D' / S * C;
     
     H = [V', -C' / S * C; -B / R * B', -V];
-    Y = gdare(H);
+    Y = gcare(H);
 
     L = -(B * D' + Y * C') / S;
     
@@ -39,7 +39,7 @@ function [N, M] = cnlcf(A, B, C, D)
     C1 = sqS \ C;
     D1 = sqS \ [eye(ny), D];
     
-    NCF = ss(A1, B1, C1, D1, []);
+    NCF = ss(A1, B1, C1, D1);
     M = NCF(:, 1:ny);
     N = NCF(:, ny+1:end);
 end
