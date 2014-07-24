@@ -47,7 +47,7 @@ end
 
 
 function [N, M] = dnlcf(A, B, C, D, Ts)
-% Compute a normalized left coprime factorziation for the discrete-time
+% Compute a normalized left coprime factorization for the discrete-time
 % case.
 %
 % Source: Bongers, P.M., Heuberger, P.S., Discrete Normalized Coprime
