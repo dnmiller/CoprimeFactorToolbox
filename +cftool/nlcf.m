@@ -6,7 +6,13 @@ function [N, M] = nlcf(G)
 %       Construct a normalized left coprime factorization of the LTI system
 %       G such that G = M\N and M*M' + N*N' = I.
 
-    [A, B, C, D] = ssdata(balreal(ss(minreal(G))));
+% (C) 2015 D. Miller
+
+    narginchk(1, 1);
+    validateattributes(G, {'ss', 'tf' ,'zpk'}, {});
+    
+    % Extract a balanced, minimal state-space realization.
+    [A, B, C, D] = ssdata(balreal(ss(minreal(G, [], false))));
 
     if isct(G)
         [N, M] = cnlcf(A, B, C, D);
@@ -25,10 +31,27 @@ function [N, M] = cnlcf(A, B, C, D)
     
     R = eye(nu) + D' * D;
     S = eye(ny) + D * D';
+    
+    F = -B / R * B';
+    G = -C' / S * C;
+    
     V = A - B * D' / S * C;
     
-    H = [V', -C' / S * C; -B / R * B', -V];
-    Y = gcare(H);
+    H = [V', G; F, -V];
+    
+    try
+        Y = gcare(H);
+    catch err
+        if strcmp(err.identifier, 'Control:foundation:ARE12')
+            % Try again with forced symmetry. This error should be
+            % impossible given the above math, but happens anyway
+            % sometimes.
+            F = triu(F, 1) + triu(F, 1)' + diag(diag(F));
+            G = triu(G, 1) + triu(G, 1)' + diag(diag(G));
+            H = [V', G; F, -V];
+            Y = gcare(H);
+        end
+    end
 
     L = -(B * D' + Y * C') / S;
     
