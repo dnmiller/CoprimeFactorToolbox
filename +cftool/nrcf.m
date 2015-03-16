@@ -3,10 +3,16 @@ function [N, M] = nrcf(G)
 %
 %   [N, M] = nrcf(G) 
 % 
-%       Construct a normalized right coprime factorization of the LTI system
-%       G such that G = N/M and M'*M + N'*N = I.
+%       Construct a normalized right coprime factorization of the LTI
+%       system G such that G = N/M and M'*M + N'*N = I.
 
-    [A, B, C, D] = ssdata(balreal(ss(minreal(G))));
+% (C) 2015 D. Miller
+
+    narginchk(1, 1);
+    validateattributes(G, {'ss', 'tf' ,'zpk'}, {});
+
+    % Extract a balanced, minimal state-space realization.
+    [A, B, C, D] = ssdata(balreal(ss(minreal(G, [], false))));
     
     if isct(G)
         [N, M] = cnrcf(A, B, C, D);
@@ -28,9 +34,25 @@ function [N, M] = cnrcf(A, B, C, D)
     
     V = A - B / R * D' * C;
     
-    H = [V, -B / R * B'; -C' / S * C, -V'];
+    F = -B / R * B';
+    G = -C' / S * C;
     
-    X = gcare(H);
+    H = [V, F; G, -V'];
+    try
+        X = gcare(H);
+    catch err
+        if strcmp(err.identifier, 'Control:foundation:ARE12')
+            % Try again with forced symmetry. This error should be
+            % impossible given the above math, but happens anyway
+            % sometimes.
+            F = triu(F, 1) + triu(F, 1)' + diag(diag(F));
+            G = triu(G, 1) + triu(G, 1)' + diag(diag(G));
+            H = [V, F; G, -V'];
+            X = gcare(H);
+        else
+            rethrow(err);
+        end
+    end
     
     F = -R \ (B' * X + D' * C);
     sqR = sqrtm(R);
